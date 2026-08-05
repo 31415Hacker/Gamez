@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gamez | Animal Sprint</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar"><a class="brand" href="/"><span class="brand-mark">✦</span> gamez</a><span class="online"><i></i> live rooms</span></header>
+    <section class="hero"><p class="eyebrow">THE QUICK-THINKING CLUB</p><h1>Pick a game.<br><em>Make a little noise.</em></h1><p class="intro">Fast, friendly games for the people in the room and the friends on the other side of the screen.</p></section>
+    <section class="lobby" id="lobby">
+      <div class="section-heading"><div><p class="eyebrow">01 / CHOOSE YOUR PLAYGROUND</p><h2>What are we playing?</h2></div><span class="room-count">3 games available</span></div>
+      <div class="game-grid">
+        <button class="game-card featured" data-game="animal"><span class="card-number">01</span><span class="game-icon">◉</span><strong>Animal Sprint</strong><span>Think fast. Name an animal. Beat the clock.</span><b>PLAY NOW <i>↗</i></b></button>
+        <button class="game-card" data-game="coming"><span class="card-number">02</span><span class="game-icon">⌁</span><strong>Word Chain</strong><span>Keep the chain alive with a clever next word.</span><b>COMING SOON</b></button>
+        <button class="game-card" data-game="coming"><span class="card-number">03</span><span class="game-icon">✣</span><strong>Quick Draw</strong><span>Sketch it before the other players guess it.</span><b>COMING SOON</b></button>
+      </div>
+    </section>
+    <section class="play-panel hidden" id="playPanel">
+      <div class="section-heading"><div><p class="eyebrow">02 / ANIMAL SPRINT</p><h2>Get in the room</h2></div><button class="back-button" id="backButton">← all games</button></div>
+      <div class="join-layout"><div class="join-copy"><span class="big-icon">◉</span><h3>One letter.<br><em>Five seconds.</em></h3><p>Take turns naming a real animal that starts with the letter on screen. No repeats, no googling, no mercy.</p></div><form class="join-form" id="joinForm"><label>Your name<input id="nameInput" maxlength="24" placeholder="e.g. Alex" required></label><label>Room code<input id="roomInput" maxlength="12" value="SUNNY" required></label><button class="primary-button" type="submit">JOIN ROOM <span>↗</span></button><small>Share the room code with your friends to play together.</small></form></div>
+    </section>
+    <section class="room-panel hidden" id="roomPanel">
+      <div class="room-header"><div><p class="eyebrow">ROOM <span id="roomName">SUNNY</span></p><h2>Animal Sprint <span class="live-pill"><i></i> LIVE</span></h2></div><button class="copy-button" id="copyButton">COPY ROOM CODE</button></div>
+      <div class="game-layout"><aside><div class="players-head"><span>PLAYERS</span><span id="playerCount">0 / 8</span></div><div id="players" class="players"></div><div class="rules"><p class="eyebrow">HOW TO PLAY</p><p>Say an animal that begins with the displayed letter before time runs out.</p></div></aside><div class="round-area"><div class="round-top"><span id="roundStatus">WAITING FOR PLAYERS</span><span id="timer">—</span></div><div class="letter-box"><span>YOUR LETTER IS</span><strong id="letter">?</strong></div><form class="answer-form" id="answerForm"><input id="answerInput" placeholder="Type an animal..." autocomplete="off" disabled><button class="primary-button" type="submit" disabled>SUBMIT <span>↗</span></button></form><button class="start-button" id="startButton">START A ROUND <span>↗</span></button><div class="feed" id="feed"></div></div></div>
+    </section>
+    <footer><span>GAMEZ / PLAY TOGETHER</span><span>REAL-TIME VIA WEBSOCKET</span></footer>
+  </main><script src="app.js"></script>
+</body></html>

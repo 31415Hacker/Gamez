@@ -78,7 +78,7 @@ async function isDictionaryAnimal(word) {
       .map((definition) => definition.definition || '')
       .join(' ')
       .toLowerCase();
-    const valid = /\b(animal|mammal|bird|fish|reptile|amphibian|insect|arachnid|crustacean|mollusc|mollusk|marsupial|rodent|primate|canine|feline|bovine|equine|avian|aquatic|worm|beetle|butterfly|spider|snake|lizard|frog|toad|turtle|tortoise|shark|whale|dolphin)\b/.test(definitions);
+    const valid = /\b(animal|mammal|bird|fish|reptile|amphibian|insect|arachnid|crustacean|mollusc|mollusk|marsupial|rodent|primate|canine|feline|felid|bovine|equine|avian|aquatic|worm|beetle|butterfly|spider|snake|lizard|frog|toad|turtle|tortoise|shark|whale|dolphin|cat|dog|horse|goat|sheep|deer|bear|ape|monkey)\b/.test(definitions);
     dictionaryCache.set(word, valid);
     return valid;
   } catch {

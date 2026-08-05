@@ -7,6 +7,7 @@ const WebSocket = require('ws');
 const port = process.env.PORT || 8787;
 const publicDir = path.join(__dirname, 'public');
 const rooms = new Map();
+const dictionaryCache = new Map();
 
 const animals = new Set([
   'aardvark', 'albatross', 'alligator', 'alpaca', 'ant', 'anteater', 'antelope', 'ape', 'armadillo',
@@ -91,6 +92,20 @@ function sendError(socket, message) {
   socket.send(JSON.stringify({ type: 'error', message }));
 }
 
+async function isDictionaryWord(word) {
+  if (dictionaryCache.has(word)) return dictionaryCache.get(word);
+  try {
+    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, {
+      signal: AbortSignal.timeout(2500)
+    });
+    const valid = response.ok;
+    dictionaryCache.set(word, valid);
+    return valid;
+  } catch {
+    return false;
+  }
+}
+
 const server = http.createServer((request, response) => {
   const requested = request.url === '/' ? '/index.html' : request.url;
   const filePath = path.join(publicDir, path.normalize(requested));
@@ -107,7 +122,7 @@ const server = http.createServer((request, response) => {
 const wss = new WebSocket.Server({ server });
 wss.on('connection', (socket) => {
   let player;
-  socket.on('message', (raw) => {
+  socket.on('message', async (raw) => {
     let message;
     try { message = JSON.parse(raw); } catch { sendError(socket, 'That message was not valid.'); return; }
 
@@ -133,13 +148,15 @@ wss.on('connection', (socket) => {
       if (room.round.answered.has(player.id)) { sendError(socket, 'You already answered this round.'); return; }
       const answer = clean(message.answer, '').toLowerCase().replace(/[^a-z-]/g, '');
       const letter = room.round.letter.toLowerCase();
-      const valid = answer.length > 1 && answer.startsWith(letter) && animals.has(answer);
       room.round.answered.add(player.id);
+      const knownWord = answer.length > 1 && await isDictionaryWord(answer);
+      const valid = knownWord && answer.startsWith(letter) && animals.has(answer);
       if (valid) {
         player.score += 1;
         room.history.push({ kind: 'success', message: `${player.name} scored with ${answer}.` });
       } else {
-        room.history.push({ kind: 'miss', message: `${player.name}: “${answer || '...'}” is not a ${room.round.letter} animal.` });
+        const reason = knownWord ? `not a ${room.round.letter} animal` : 'not a recognized word';
+        room.history.push({ kind: 'miss', message: `${player.name}: “${answer || '...'}” is ${reason}.` });
       }
       broadcast(room);
       return;

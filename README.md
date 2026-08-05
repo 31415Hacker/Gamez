@@ -2,6 +2,9 @@
 
 Real-time multiplayer party games using a Node.js WebSocket server.
 
+Animal answers are checked against the [Free Dictionary API](https://dictionaryapi.dev/)
+as well as the server's animal list, so misspellings and made-up words are rejected.
+
 ## Local development
 
 ```bash

@@ -16,13 +16,14 @@ function clean(value, fallback) {
 }
 
 function newRoom(code) {
-  return { code, players: new Map(), round: null, history: [] };
+  return { code, hostId: null, players: new Map(), round: null, history: [] };
 }
 
 function publicState(room) {
   return {
     type: 'state',
     room: room.code,
+    hostId: room.hostId,
     players: [...room.players.values()].map(({ id, name, score, connected }) => ({ id, name, score, connected })),
     round: room.round ? {
       letter: room.round.letter,
@@ -110,7 +111,11 @@ wss.on('connection', (socket) => {
       const code = clean(message.room, 'SUNNY').toUpperCase();
       const room = rooms.get(code) || newRoom(code);
       const id = crypto.randomUUID();
+      const wantsHost = message.role === 'host';
+      if (wantsHost && message.password !== (process.env.HOST_PASSWORD || 'gamez-host-2026')) { sendError(socket, 'That host password is incorrect.'); return; }
+      if (wantsHost && room.hostId) { sendError(socket, 'This room already has a host.'); return; }
       player = { id, name: clean(message.name, 'Player'), room: code, score: 0, connected: true, socket };
+      if (wantsHost) room.hostId = id;
       room.players.set(id, player); rooms.set(code, room);
       socket.send(JSON.stringify({ type: 'joined', id, room: code }));
       room.history.push({ kind: 'system', message: `${player.name} joined the room.` });
@@ -121,7 +126,10 @@ wss.on('connection', (socket) => {
     const room = rooms.get(player.room || clean(message.room, 'SUNNY')) || [...rooms.values()].find((candidate) => candidate.players.has(player.id));
     if (!room) return;
 
-    if (message.action === 'start') { startRound(room); return; }
+    if (message.action === 'start') {
+      if (player.id !== room.hostId) { sendError(socket, 'Only the host can start a round.'); return; }
+      startRound(room); return;
+    }
     if (message.action === 'submit') {
       if (!room.round?.active) { sendError(socket, 'There is no active round.'); return; }
       if (room.round.answered.has(player.id)) { sendError(socket, 'You already answered this round.'); return; }
@@ -148,6 +156,10 @@ wss.on('connection', (socket) => {
     if (!room) return;
     room.players.delete(player.id);
     room.history.push({ kind: 'system', message: `${player.name} left the room.` });
+    if (room.hostId === player.id && room.players.size > 0) {
+      room.hostId = room.players.keys().next().value;
+      room.history.push({ kind: 'system', message: `${room.players.get(room.hostId).name} is now the host.` });
+    }
     if (room.players.size === 0) { if (room.round) clearTimeout(room.round.timeout); rooms.delete(room.code); }
     else broadcast(room);
   });

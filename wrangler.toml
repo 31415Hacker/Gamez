@@ -1,0 +1,11 @@
+name = "gamez-multiplayer"
+main = "worker.js"
+compatibility_date = "2026-08-06"
+
+[[durable_objects.bindings]]
+name = "GAME_ROOM"
+class_name = "GameRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["GameRoom"]

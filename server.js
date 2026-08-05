@@ -4,7 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 const WebSocket = require('ws');
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8787;
 const publicDir = path.join(__dirname, 'public');
 const rooms = new Map();
 

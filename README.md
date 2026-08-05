@@ -9,7 +9,7 @@ npm install
 npm start
 ```
 
-Open `http://localhost:3000` in multiple browser tabs and join the same room.
+Open `http://localhost:8787` in multiple browser tabs and join the same room.
 
 ## Deployment
 

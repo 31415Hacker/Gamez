@@ -9,34 +9,6 @@ const publicDir = path.join(__dirname, 'public');
 const rooms = new Map();
 const dictionaryCache = new Map();
 
-const animals = new Set([
-  'aardvark', 'albatross', 'alligator', 'alpaca', 'ant', 'anteater', 'antelope', 'ape', 'armadillo',
-  'baboon', 'badger', 'bat', 'bear', 'beaver', 'bee', 'bison', 'boar', 'buffalo', 'butterfly',
-  'camel', 'cat', 'cheetah', 'chicken', 'chimpanzee', 'chinchilla', 'cobra', 'cougar', 'cow', 'crab', 'crocodile',
-  'deer', 'dingo', 'dinosaur', 'dog', 'dolphin', 'donkey', 'dove', 'dragon', 'duck',
-  'eagle', 'echidna', 'eel', 'elephant', 'elk',
-  'falcon', 'ferret', 'finch', 'fish', 'flamingo', 'fly', 'fox', 'frog',
-  'gazelle', 'gerbil', 'giraffe', 'goat', 'goose', 'gorilla',
-  'hamster', 'hare', 'hawk', 'hedgehog', 'hippo', 'horse', 'hyena',
-  'ibex', 'iguana',
-  'jackal', 'jaguar', 'jellyfish',
-  'kangaroo', 'koala',
-  'lemur', 'leopard', 'lion', 'lizard', 'llama', 'lobster',
-  'magpie', 'manatee', 'monkey', 'moose', 'mouse', 'mule',
-  'newt',
-  'octopus', 'opossum', 'orangutan', 'ostrich', 'otter', 'owl', 'ox',
-  'panda', 'panther', 'parrot', 'peacock', 'pelican', 'penguin', 'pig', 'pigeon', 'pony', 'porcupine',
-  'quail',
-  'rabbit', 'raccoon', 'ram', 'rat', 'raven', 'reindeer', 'rhino', 'rooster',
-  'salmon', 'seal', 'shark', 'sheep', 'skunk', 'sloth', 'snail', 'snake', 'sparrow', 'spider', 'squid', 'swan',
-  'tiger', 'toad', 'toucan', 'turkey', 'turtle',
-  'unicorn',
-  'vulture',
-  'walrus', 'wasp', 'weasel', 'whale', 'wolf', 'wombat', 'woodpecker',
-  'yak',
-  'zebra'
-]);
-
 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 function clean(value, fallback) {
@@ -92,13 +64,20 @@ function sendError(socket, message) {
   socket.send(JSON.stringify({ type: 'error', message }));
 }
 
-async function isDictionaryWord(word) {
+async function isDictionaryAnimal(word) {
   if (dictionaryCache.has(word)) return dictionaryCache.get(word);
   try {
     const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, {
       signal: AbortSignal.timeout(2500)
     });
-    const valid = response.ok;
+    if (!response.ok) return false;
+    const entries = await response.json();
+    const definitions = entries.flatMap((entry) => entry.meanings || [])
+      .flatMap((meaning) => meaning.definitions || [])
+      .map((definition) => definition.definition || '')
+      .join(' ')
+      .toLowerCase();
+    const valid = /\b(animal|mammal|bird|fish|reptile|amphibian|insect|arachnid|crustacean|mollusc|mollusk|marsupial|rodent|primate|canine|feline|bovine|equine|avian|aquatic|worm|beetle|butterfly|spider|snake|lizard|frog|toad|turtle|tortoise|shark|whale|dolphin)\b/.test(definitions);
     dictionaryCache.set(word, valid);
     return valid;
   } catch {
@@ -149,13 +128,13 @@ wss.on('connection', (socket) => {
       const answer = clean(message.answer, '').toLowerCase().replace(/[^a-z-]/g, '');
       const letter = room.round.letter.toLowerCase();
       room.round.answered.add(player.id);
-      const knownWord = answer.length > 1 && await isDictionaryWord(answer);
-      const valid = knownWord && answer.startsWith(letter) && animals.has(answer);
+      const knownAnimal = answer.length > 1 && await isDictionaryAnimal(answer);
+      const valid = knownAnimal && answer.startsWith(letter);
       if (valid) {
         player.score += 1;
         room.history.push({ kind: 'success', message: `${player.name} scored with ${answer}.` });
       } else {
-        const reason = knownWord ? `not a ${room.round.letter} animal` : 'not a recognized word';
+        const reason = knownAnimal ? `does not begin with ${room.round.letter}` : 'not recognized as an animal by the dictionary';
         room.history.push({ kind: 'miss', message: `${player.name}: “${answer || '...'}” is ${reason}.` });
       }
       broadcast(room);

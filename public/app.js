@@ -18,7 +18,8 @@ $('copyButton').addEventListener('click', async () => { await navigator.clipboar
 
 function connect() {
   const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  const websocketUrl = window.GAMEZ_WS_URL || `${protocol}://${location.host}`;
+  const localPagesServer = location.hostname.endsWith('github.io') ? 'ws://localhost:8787' : `${protocol}://${location.host}`;
+  const websocketUrl = window.GAMEZ_WS_URL || localPagesServer;
   socket = new WebSocket(websocketUrl);
   socket.addEventListener('open', () => send({ action: 'join', name: $('nameInput').value, room: $('roomInput').value }));
   socket.addEventListener('message', ({ data }) => { const message = JSON.parse(data); if (message.type === 'joined') myId = message.id; if (message.type === 'error') return alert(message.message); if (message.type === 'state') render(message); });

@@ -16,7 +16,12 @@ Open `http://localhost:8787` in multiple browser tabs and join the same room.
 
 ## Deployment
 
-The `public/` directory is deployed automatically to GitHub Pages. GitHub Pages
-cannot run the WebSocket server, so deploy `server.js` separately and set
+The `public/` directory is deployed automatically to GitHub Pages. When opened
+from this project's GitHub Pages site, the frontend tries `ws://localhost:8787`
+so it can connect to a local `npm start` server on your computer. This only
+works for the person who is running that local server: `localhost` is never a
+public multiplayer host.
+
+For public multiplayer, deploy `server.js` separately and set
 `window.GAMEZ_WS_URL` in `public/index.html` to its secure WebSocket URL, for
 example `wss://your-gamez-server.example.com`.

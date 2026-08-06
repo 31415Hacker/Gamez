@@ -2,6 +2,11 @@ const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const ANIMAL_TAXA = new Set(['Animalia', 'Mammalia', 'Aves', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Arachnida', 'Insecta', 'Mollusca', 'Crustacea']);
 const SIMPLE_ANIMALS = ['cat', 'dog', 'lion', 'tiger', 'bear', 'polar bear', 'horse', 'goat', 'sheep', 'cow', 'pig', 'rabbit', 'mouse', 'monkey', 'zebra', 'giraffe', 'elephant', 'hippopotamus', 'kangaroo', 'panda', 'red panda', 'penguin', 'dolphin', 'whale', 'blue whale', 'shark', 'great white shark', 'turtle', 'sea turtle', 'snake', 'frog', 'eagle', 'golden eagle', 'owl', 'parrot', 'chicken'];
 
+function matchesTaxonName(name, target) {
+  const value = String(name || '').toLowerCase();
+  return value.replace(/[^a-z0-9]/g, '') === target || value.split(/\s+/).some((part) => part.replace(/[^a-z0-9]/g, '') === target);
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -108,7 +113,7 @@ export class GameRoom {
       if (!response.ok) return false;
       const data = await response.json();
       const target = String(word).toLowerCase().replace(/[^a-z0-9]/g, '');
-      const valid = (data.results || []).some((taxon) => ANIMAL_TAXA.has(taxon.iconic_taxon_name) && [taxon.name, taxon.preferred_common_name, taxon.matched_term].some((name) => String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '') === target));
+      const valid = (data.results || []).some((taxon) => ANIMAL_TAXA.has(taxon.iconic_taxon_name) && [taxon.name, taxon.preferred_common_name, taxon.matched_term].some((name) => matchesTaxonName(name, target)));
       this.dictionaryCache.set(word, valid);
       return valid;
     } catch { return false; }
@@ -119,8 +124,8 @@ export class GameRoom {
     if (this.game === 'quickchain') return this.startChain();
     if (this.game === 'detective') return this.startDetective();
     const letter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
-    this.round = { type: 'animal', letter, endsAt: Date.now() + 10000, active: true, answered: new Set(), answers: new Set() };
-    this.round.timeout = setTimeout(() => this.stopRound(`Time! The letter was ${letter}.`), 10000);
+    this.round = { type: 'animal', letter, endsAt: Date.now() + 60000, active: true, answered: new Set(), answers: new Set() };
+    this.round.timeout = setTimeout(() => this.stopRound(`Time! The letter was ${letter}.`), 60000);
     this.history.push({ kind: 'system', message: `New round: name an animal beginning with ${letter}.` });
     this.broadcast();
   }

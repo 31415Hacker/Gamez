@@ -53,9 +53,9 @@ function stopRound(room, message) {
 function startRound(room) {
   if (room.round?.active) return;
   const letter = letters[Math.floor(Math.random() * letters.length)];
-  const endsAt = Date.now() + 5000;
+  const endsAt = Date.now() + 60000;
   const round = { letter, endsAt, active: true, answered: new Set(), answers: new Set() };
-  round.timeout = setTimeout(() => stopRound(room, `Time! The letter was ${letter}.`), 10000);
+  round.timeout = setTimeout(() => stopRound(room, `Time! The letter was ${letter}.`), 60000);
   room.round = round;
   room.history.push({ kind: 'system', message: `New round: name an animal beginning with ${letter}.` });
   broadcast(room);
@@ -69,6 +69,11 @@ function normalizedName(value) {
   return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+function matchesTaxonName(name, target) {
+  const value = String(name || '').toLowerCase();
+  return normalizedName(value) === target || value.split(/\s+/).some((part) => normalizedName(part) === target);
+}
+
 async function isINaturalistAnimal(word) {
   if (dictionaryCache.has(word)) return dictionaryCache.get(word);
   try {
@@ -79,7 +84,7 @@ async function isINaturalistAnimal(word) {
     const data = await response.json();
     const target = normalizedName(word);
     const animalTaxa = new Set(['Animalia', 'Mammalia', 'Aves', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Arachnida', 'Insecta', 'Mollusca', 'Crustacea']);
-    const valid = (data.results || []).some((taxon) => animalTaxa.has(taxon.iconic_taxon_name) && [taxon.name, taxon.preferred_common_name, taxon.matched_term].some((name) => normalizedName(name) === target));
+    const valid = (data.results || []).some((taxon) => animalTaxa.has(taxon.iconic_taxon_name) && [taxon.name, taxon.preferred_common_name, taxon.matched_term].some((name) => matchesTaxonName(name, target)));
     dictionaryCache.set(word, valid);
     return valid;
   } catch {

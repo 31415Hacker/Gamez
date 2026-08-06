@@ -13,7 +13,7 @@ const lobby = $('lobby'); const playPanel = $('playPanel'); const roomPanel = $(
 
 document.querySelectorAll('.game-card').forEach((card) => card.addEventListener('click', () => {
   selectedGame = card.dataset.game; $('gameInput').value = selectedGame;
-  $('joinTitle').innerHTML = selectedGame === 'quickchain' ? 'Keep the chain.<br><em>Think fast.</em>' : selectedGame === 'detective' ? 'Ask less.<br><em>Guess smart.</em>' : 'One letter.<br><em>Ten seconds.</em>';
+  $('joinTitle').innerHTML = selectedGame === 'quickchain' ? 'Keep the chain.<br><em>Think fast.</em>' : selectedGame === 'detective' ? 'Ask less.<br><em>Guess smart.</em>' : 'One letter.<br><em>One minute.</em>';
   $('joinDescription').textContent = selectedGame === 'quickchain' ? 'Build a word chain together. Your word must begin with the last letter of the previous word.' : selectedGame === 'detective' ? 'Team A gets an animal. Team B asks yes-or-no questions, counts them, then teams swap.' : 'Take turns naming a real animal that starts with the letter on screen. No repeats, no googling, no mercy.';
   lobby.classList.add('hidden'); playPanel.classList.remove('hidden'); window.scrollTo({ top: 0, behavior: 'smooth' });
 }));

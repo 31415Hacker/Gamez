@@ -47,6 +47,7 @@ function render(next) {
   $('questionText').textContent = round?.currentQuestion ? `QUESTION: ${round.currentQuestion}` : '';
   $('questionText').classList.toggle('hidden', !detective || !round?.currentQuestion);
   $('rulesText').textContent = detective ? 'Team B asks yes-or-no questions. Team A answers. Lowest question count wins.' : chain ? 'Play a word beginning with the last letter of the previous word.' : 'Say an animal that begins with the displayed letter before time runs out.';
+  $('teamScore').textContent = detective ? `TEAM A ${next.teamScores?.A || 0}  ·  TEAM B ${next.teamScores?.B || 0}` : '';
   $('startButton').classList.toggle('hidden', !isHost || Boolean(round?.active));
   $('roundStatus').textContent = round?.active ? (detective ? `${round.phase === 'answering' ? 'TEAM A ANSWERS' : 'TEAM B ASKS'} · ${round.questionCount || 0} QUESTIONS` : chain ? 'PLAY A WORD' : 'NAME AN ANIMAL') : (round ? 'ROUND OVER' : (isHost ? 'READY TO START' : 'WAITING FOR HOST'));
   const canAnswer = Boolean(round?.active && !detective && !(round.answered || []).includes(myId)); $('answerInput').disabled = !canAnswer; $('answerForm').querySelector('button').disabled = !canAnswer; $('answerInput').placeholder = chain ? 'Next word...' : 'Type an animal...';

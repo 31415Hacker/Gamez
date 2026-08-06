@@ -8,3 +8,4 @@
 .detective-buttons .start-button{display:inline-block;min-width:70px;margin-right:12px;padding:14px 20px;border:1px solid var(--red)}
 .letter-box #questionText{display:block;margin:18px 28px 0;max-width:560px;text-align:center;font-size:clamp(15px,2vw,21px);font-weight:600;line-height:1.35;letter-spacing:-.3px;color:var(--ink)}
 .player .team{font:9px 'DM Mono';letter-spacing:1px;margin-left:5px}.player .team-a{color:var(--red)}.player .team-b{color:#78951e}
+.team-score{font:11px 'DM Mono';letter-spacing:1px;color:var(--ink);margin-top:25px}

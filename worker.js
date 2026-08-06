@@ -19,6 +19,7 @@ export class GameRoom {
     this.env = env;
     this.roomCode = 'SUNNY';
     this.game = 'animal';
+    this.detectiveScores = { A: 0, B: 0 };
     this.players = new Map();
     this.hostId = null;
     this.round = null;
@@ -162,7 +163,10 @@ export class GameRoom {
     } else {
       const [first, second] = this.round.attempts;
       const winner = first === second ? 'It is a tie' : first < second ? 'Team B wins' : 'Team A wins';
-      this.history.push({ kind: 'success', message: `Team A guessed ${this.round.animal} in ${this.round.questionCount} questions. ${winner} with ${Math.min(first, second)} questions.` });
+      if (first === second) { this.detectiveScores.A += 1; this.detectiveScores.B += 1; }
+      else if (first < second) this.detectiveScores.B += 1;
+      else this.detectiveScores.A += 1;
+      this.history.push({ kind: 'success', message: `Team A guessed ${this.round.animal} in ${this.round.questionCount} questions. ${winner}.` });
       this.round.active = false;
     }
     this.broadcast();
@@ -199,7 +203,7 @@ export class GameRoom {
   broadcast() {
     for (const player of this.players.values()) {
       const round = this.round && { type: this.round.type, letter: this.round.letter, endsAt: this.round.endsAt, active: this.round.active, answered: [...(this.round.answered || [])], currentWord: this.round.currentWord, currentQuestion: this.round.currentQuestion, questionCount: this.round.questionCount, phase: this.round.phase, teamA: this.round.teamA, teamB: this.round.teamB, animal: this.round.teamA?.includes(player.id) ? this.round.animal : undefined };
-      if (player.socket.readyState === 1) player.socket.send(JSON.stringify({ type: 'state', room: this.roomCode, game: this.game, hostId: this.hostId, players: [...this.players.values()].map(({ id, name, score }) => ({ id, name, score })), round, history: this.history.slice(-8) }));
+      if (player.socket.readyState === 1) player.socket.send(JSON.stringify({ type: 'state', room: this.roomCode, game: this.game, hostId: this.hostId, teamScores: this.detectiveScores, players: [...this.players.values()].map(({ id, name, score }) => ({ id, name, score })), round, history: this.history.slice(-8) }));
     }
   }
 }

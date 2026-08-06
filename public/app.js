@@ -3,6 +3,10 @@ let myId;
 let state;
 let timerInterval;
 let selectedGame = 'animal';
+let censorAnimal = true;
+let animalCensored = false;
+let shownAnimal = '';
+let censorTimer;
 
 const $ = (id) => document.getElementById(id);
 const lobby = $('lobby'); const playPanel = $('playPanel'); const roomPanel = $('roomPanel');
@@ -23,6 +27,7 @@ $('guessForm').addEventListener('submit', (event) => { event.preventDefault(); c
 $('questionForm').addEventListener('submit', (event) => { event.preventDefault(); const input = $('questionInput'); if (input.value.trim()) { send({ action: 'question', text: input.value }); input.value = ''; } });
 document.querySelectorAll('#detectiveButtons button').forEach((button) => button.addEventListener('click', () => send({ action: 'answer-question', answer: button.dataset.answer })));
 $('copyButton').addEventListener('click', async () => { await navigator.clipboard?.writeText($('roomName').textContent); $('copyButton').textContent = 'COPIED!'; setTimeout(() => $('copyButton').textContent = 'COPY ROOM CODE', 1300); });
+$('censorToggle').addEventListener('click', () => { censorAnimal = !censorAnimal; animalCensored = censorAnimal; $('censorToggle').textContent = censorAnimal ? 'ANIMAL: HIDDEN' : 'ANIMAL: REVEALED'; render(state); });
 
 function connect() {
   const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -44,10 +49,15 @@ function render(next) {
   $('deleteRoomButton').classList.toggle('hidden', !isHost);
   const round = next.round; const gameName = next.game === 'quickchain' ? 'Quick Chain' : next.game === 'detective' ? 'Animal Detective' : 'Animal Sprint'; $('gameTitle').firstChild.textContent = `${gameName} `;
   $('players').innerHTML = next.players.map((player) => { const team = next.game === 'detective' && round ? (round.teamA?.includes(player.id) ? 'A' : round.teamB?.includes(player.id) ? 'B' : '') : ''; return `<div class="player"><span>${escapeHtml(player.name)} ${player.id === myId ? '<small class="you">YOU</small>' : ''} ${player.id === next.hostId ? '<small class="host">HOST</small>' : ''} ${team ? `<small class="team team-${team.toLowerCase()}">TEAM ${team}</small>` : ''}</span><span class="score">${player.score} pts</span></div>`; }).join('');
-  const detective = next.game === 'detective'; const chain = next.game === 'quickchain'; $('roundLabel').textContent = detective ? (round?.animal ? `TEAM ${round.knowerTeam} SEES` : 'CURRENT QUESTION') : chain ? 'CURRENT CHAIN' : 'YOUR LETTER IS'; $('letter').textContent = detective ? (round?.animal || round?.currentQuestion || '?') : chain ? (round?.currentWord || 'START') : (round?.letter || '?');
+  const detective = next.game === 'detective'; const chain = next.game === 'quickchain';
+  if (round?.animal && round.animal !== shownAnimal) { shownAnimal = round.animal; animalCensored = false; clearTimeout(censorTimer); if (censorAnimal) censorTimer = setTimeout(() => { animalCensored = true; render(state); }, 3000); }
+  if (!round?.animal) { shownAnimal = ''; animalCensored = false; clearTimeout(censorTimer); }
+  const displayAnimal = round?.animal ? (animalCensored ? '••••••' : round.animal) : undefined;
+  $('roundLabel').textContent = detective ? (round?.animal ? `TEAM ${round.knowerTeam} SEES` : 'CURRENT QUESTION') : chain ? 'CURRENT CHAIN' : 'YOUR LETTER IS'; $('letter').textContent = detective ? (displayAnimal || round?.currentQuestion || '?') : chain ? (round?.currentWord || 'START') : (round?.letter || '?');
   $('letter').classList.toggle('question-display', detective && !round?.animal);
   $('questionText').textContent = round?.currentQuestion ? `QUESTION: ${round.currentQuestion}` : '';
   $('questionText').classList.toggle('hidden', !detective || !round?.currentQuestion);
+  $('censorToggle').classList.toggle('hidden', !detective || !round?.animal); $('censorToggle').textContent = censorAnimal ? 'ANIMAL: HIDDEN' : 'ANIMAL: REVEALED';
   $('rulesText').textContent = detective ? 'Team B asks yes-or-no questions. Team A answers. Lowest question count wins.' : chain ? 'Play a word beginning with the last letter of the previous word.' : 'Say an animal that begins with the displayed letter before time runs out.';
   $('teamScore').textContent = detective ? `TEAM A ${next.teamScores?.A || 0}  ·  TEAM B ${next.teamScores?.B || 0}` : '';
   $('startButton').classList.toggle('hidden', !isHost || Boolean(round?.active));

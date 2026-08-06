@@ -1,5 +1,6 @@
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const ANIMAL_TAXA = new Set(['Animalia', 'Mammalia', 'Aves', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Arachnida', 'Insecta', 'Mollusca', 'Crustacea']);
+const SIMPLE_ANIMALS = ['cat', 'dog', 'lion', 'tiger', 'bear', 'horse', 'goat', 'sheep', 'cow', 'pig', 'rabbit', 'mouse', 'monkey', 'zebra', 'giraffe', 'elephant', 'hippopotamus', 'kangaroo', 'panda', 'penguin', 'dolphin', 'whale', 'shark', 'turtle', 'snake', 'frog', 'eagle', 'owl', 'parrot', 'chicken'];
 
 export default {
   async fetch(request, env) {
@@ -143,13 +144,7 @@ export class GameRoom {
   }
 
   async randomAnimal() {
-    try {
-      const response = await fetch('https://api.inaturalist.org/v1/taxa?iconic_taxon_name=Animalia&rank=species&per_page=100&order_by=observations_count&order=desc');
-      const data = await response.json();
-      const names = (data.results || []).filter((taxon) => ANIMAL_TAXA.has(taxon.iconic_taxon_name)).map((taxon) => taxon.preferred_common_name || taxon.name).filter((name) => /^[a-z]+$/i.test(name));
-      if (names.length) return names[Math.floor(Math.random() * names.length)].toLowerCase();
-    } catch {}
-    return 'lion';
+    return SIMPLE_ANIMALS[Math.floor(Math.random() * SIMPLE_ANIMALS.length)];
   }
 
   question(socket, player, text) {

@@ -125,7 +125,10 @@ export class GameRoom {
 
   startDetective() {
     const players = [...this.players.values()];
-    players.sort(() => Math.random() - 0.5);
+    for (let index = players.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      [players[index], players[swapIndex]] = [players[swapIndex], players[index]];
+    }
     this.round = { type: 'detective', active: true, phase: 'asking', turn: 1, attempts: [], animal: DETECTIVE_ANIMALS[Math.floor(Math.random() * DETECTIVE_ANIMALS.length)], teamA: players.filter((_, index) => index % 2 === 0).map((player) => player.id), teamB: players.filter((_, index) => index % 2 === 1).map((player) => player.id), questionCount: 0, currentQuestion: '' };
     this.history.push({ kind: 'system', message: 'Animal Detective started. Team B asks first.' });
     this.broadcast();

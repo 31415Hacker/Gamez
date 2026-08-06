@@ -40,8 +40,8 @@ function render(next) {
   state = next; playPanel.classList.add('hidden'); lobby.classList.add('hidden'); roomPanel.classList.remove('hidden');
   $('roomName').textContent = next.room; $('playerCount').textContent = `${next.players.length} / 8`;
   const isHost = next.hostId === myId;
-  $('players').innerHTML = next.players.map((player) => `<div class="player"><span>${escapeHtml(player.name)} ${player.id === myId ? '<small class="you">YOU</small>' : ''} ${player.id === next.hostId ? '<small class="host">HOST</small>' : ''}</span><span class="score">${player.score} pts</span></div>`).join('');
   const round = next.round; const gameName = next.game === 'quickchain' ? 'Quick Chain' : next.game === 'detective' ? 'Animal Detective' : 'Animal Sprint'; $('gameTitle').firstChild.textContent = `${gameName} `;
+  $('players').innerHTML = next.players.map((player) => { const team = next.game === 'detective' && round ? (round.teamA?.includes(player.id) ? 'A' : round.teamB?.includes(player.id) ? 'B' : '') : ''; return `<div class="player"><span>${escapeHtml(player.name)} ${player.id === myId ? '<small class="you">YOU</small>' : ''} ${player.id === next.hostId ? '<small class="host">HOST</small>' : ''} ${team ? `<small class="team team-${team.toLowerCase()}">TEAM ${team}</small>` : ''}</span><span class="score">${player.score} pts</span></div>`; }).join('');
   const detective = next.game === 'detective'; const chain = next.game === 'quickchain'; $('roundLabel').textContent = detective ? (round?.animal ? 'TEAM A SEES' : 'CURRENT QUESTION') : chain ? 'CURRENT CHAIN' : 'YOUR LETTER IS'; $('letter').textContent = detective ? (round?.animal || round?.currentQuestion || '?') : chain ? (round?.currentWord || 'START') : (round?.letter || '?');
   $('letter').classList.toggle('question-display', detective && !round?.animal);
   $('questionText').textContent = round?.currentQuestion || '';

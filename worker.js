@@ -1,5 +1,5 @@
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-const ANIMAL_WORDS = /\b(animal|mammal|bird|fish|reptile|amphibian|insect|arachnid|crustacean|mollusc|mollusk|marsupial|rodent|primate|canine|feline|felid|bovine|equine|avian|aquatic|worm|beetle|butterfly|spider|snake|lizard|frog|toad|turtle|tortoise|shark|whale|dolphin|cat|dog|horse|goat|sheep|deer|bear|ape|monkey)\b/;
+const ANIMAL_TAXA = new Set(['Animalia', 'Mammalia', 'Aves', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Arachnida', 'Insecta', 'Mollusca', 'Crustacea']);
 
 export default {
   async fetch(request, env) {
@@ -65,9 +65,9 @@ export class GameRoom {
   async submit(socket, player, rawAnswer) {
     if (!this.round?.active) return this.error(socket, 'There is no active round.');
     if (this.round.answered.has(player.id)) return this.error(socket, 'You already answered this round.');
-    const answer = String(rawAnswer || '').trim().toLowerCase().replace(/[^a-z-]/g, '');
+    const answer = String(rawAnswer || '').trim().toLowerCase().replace(/[^a-z -]/g, '').replace(/\s+/g, ' ');
     this.round.answered.add(player.id);
-    const knownAnimal = answer.length > 1 && await this.isDictionaryAnimal(answer);
+    const knownAnimal = answer.length > 1 && await this.isINaturalistAnimal(answer);
     const valid = knownAnimal && answer.startsWith(this.round.letter.toLowerCase());
     if (valid) {
       player.score += 1;
@@ -79,14 +79,14 @@ export class GameRoom {
     this.broadcast();
   }
 
-  async isDictionaryAnimal(word) {
+  async isINaturalistAnimal(word) {
     if (this.dictionaryCache.has(word)) return this.dictionaryCache.get(word);
     try {
-      const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+      const response = await fetch(`https://api.inaturalist.org/v1/taxa/autocomplete?q=${encodeURIComponent(word)}&per_page=20`);
       if (!response.ok) return false;
-      const entries = await response.json();
-      const definitions = entries.flatMap((entry) => entry.meanings || []).flatMap((meaning) => meaning.definitions || []).map((item) => item.definition || '').join(' ').toLowerCase();
-      const valid = ANIMAL_WORDS.test(definitions);
+      const data = await response.json();
+      const target = String(word).toLowerCase().replace(/[^a-z0-9]/g, '');
+      const valid = (data.results || []).some((taxon) => ANIMAL_TAXA.has(taxon.iconic_taxon_name) && [taxon.name, taxon.preferred_common_name, taxon.matched_term].some((name) => String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '') === target));
       this.dictionaryCache.set(word, valid);
       return valid;
     } catch { return false; }

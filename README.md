@@ -2,8 +2,8 @@
 
 Real-time multiplayer party games using a Node.js WebSocket server.
 
-Animal answers are checked against the [Free Dictionary API](https://dictionaryapi.dev/)
-as well as the server's animal list, so misspellings and made-up words are rejected.
+Animal answers are checked against the [iNaturalist taxonomy API](https://www.inaturalist.org/pages/api+reference),
+so common and scientific animal names can be accepted without a local animal list.
 
 ## Local development
 

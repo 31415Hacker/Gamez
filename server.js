@@ -65,20 +65,21 @@ function sendError(socket, message) {
   socket.send(JSON.stringify({ type: 'error', message }));
 }
 
-async function isDictionaryAnimal(word) {
+function normalizedName(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+async function isINaturalistAnimal(word) {
   if (dictionaryCache.has(word)) return dictionaryCache.get(word);
   try {
-    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, {
+    const response = await fetch(`https://api.inaturalist.org/v1/taxa/autocomplete?q=${encodeURIComponent(word)}&per_page=20`, {
       signal: AbortSignal.timeout(2500)
     });
     if (!response.ok) return false;
-    const entries = await response.json();
-    const definitions = entries.flatMap((entry) => entry.meanings || [])
-      .flatMap((meaning) => meaning.definitions || [])
-      .map((definition) => definition.definition || '')
-      .join(' ')
-      .toLowerCase();
-    const valid = /\b(animal|mammal|bird|fish|reptile|amphibian|insect|arachnid|crustacean|mollusc|mollusk|marsupial|rodent|primate|canine|feline|felid|bovine|equine|avian|aquatic|worm|beetle|butterfly|spider|snake|lizard|frog|toad|turtle|tortoise|shark|whale|dolphin|cat|dog|horse|goat|sheep|deer|bear|ape|monkey)\b/.test(definitions);
+    const data = await response.json();
+    const target = normalizedName(word);
+    const animalTaxa = new Set(['Animalia', 'Mammalia', 'Aves', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Arachnida', 'Insecta', 'Mollusca', 'Crustacea']);
+    const valid = (data.results || []).some((taxon) => animalTaxa.has(taxon.iconic_taxon_name) && [taxon.name, taxon.preferred_common_name, taxon.matched_term].some((name) => normalizedName(name) === target));
     dictionaryCache.set(word, valid);
     return valid;
   } catch {
@@ -133,10 +134,10 @@ wss.on('connection', (socket) => {
     if (message.action === 'submit') {
       if (!room.round?.active) { sendError(socket, 'There is no active round.'); return; }
       if (room.round.answered.has(player.id)) { sendError(socket, 'You already answered this round.'); return; }
-      const answer = clean(message.answer, '').toLowerCase().replace(/[^a-z-]/g, '');
+      const answer = clean(message.answer, '').toLowerCase().replace(/[^a-z -]/g, '').replace(/\s+/g, ' ').trim();
       const letter = room.round.letter.toLowerCase();
       room.round.answered.add(player.id);
-      const knownAnimal = answer.length > 1 && await isDictionaryAnimal(answer);
+      const knownAnimal = answer.length > 1 && await isINaturalistAnimal(answer);
       const valid = knownAnimal && answer.startsWith(letter);
       if (valid) {
         player.score += 1;

@@ -69,6 +69,11 @@ export class GameRoom {
     this.round.answered.add(player.id);
     const knownAnimal = answer.length > 1 && await this.isINaturalistAnimal(answer);
     const valid = knownAnimal && answer.startsWith(this.round.letter.toLowerCase());
+    if (valid && this.round.answers.has(answer)) {
+      this.round.answered.delete(player.id);
+      return this.error(socket, 'Someone else guessed that already. Try another animal.');
+    }
+    if (valid) this.round.answers.add(answer);
     if (valid) {
       player.score += 1;
       this.history.push({ kind: 'success', message: `${player.name} scored with ${answer}.` });
@@ -95,8 +100,8 @@ export class GameRoom {
   startRound() {
     if (this.round?.active) return;
     const letter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
-    this.round = { letter, endsAt: Date.now() + 5000, active: true, answered: new Set() };
-    this.round.timeout = setTimeout(() => this.stopRound(`Time! The letter was ${letter}.`), 5000);
+    this.round = { letter, endsAt: Date.now() + 10000, active: true, answered: new Set(), answers: new Set() };
+    this.round.timeout = setTimeout(() => this.stopRound(`Time! The letter was ${letter}.`), 10000);
     this.history.push({ kind: 'system', message: `New round: name an animal beginning with ${letter}.` });
     this.broadcast();
   }

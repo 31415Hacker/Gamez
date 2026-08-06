@@ -54,8 +54,8 @@ function startRound(room) {
   if (room.round?.active) return;
   const letter = letters[Math.floor(Math.random() * letters.length)];
   const endsAt = Date.now() + 5000;
-  const round = { letter, endsAt, active: true, answered: new Set() };
-  round.timeout = setTimeout(() => stopRound(room, `Time! The letter was ${letter}.`), 5000);
+  const round = { letter, endsAt, active: true, answered: new Set(), answers: new Set() };
+  round.timeout = setTimeout(() => stopRound(room, `Time! The letter was ${letter}.`), 10000);
   room.round = round;
   room.history.push({ kind: 'system', message: `New round: name an animal beginning with ${letter}.` });
   broadcast(room);
@@ -139,6 +139,12 @@ wss.on('connection', (socket) => {
       room.round.answered.add(player.id);
       const knownAnimal = answer.length > 1 && await isINaturalistAnimal(answer);
       const valid = knownAnimal && answer.startsWith(letter);
+      if (valid && room.round.answers.has(answer)) {
+        room.round.answered.delete(player.id);
+        sendError(socket, 'Someone else guessed that already. Try another animal.');
+        return;
+      }
+      if (valid) room.round.answers.add(answer);
       if (valid) {
         player.score += 1;
         room.history.push({ kind: 'success', message: `${player.name} scored with ${answer}.` });

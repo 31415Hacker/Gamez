@@ -1,5 +1,6 @@
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const ANIMAL_TAXA = new Set(['Animalia', 'Mammalia', 'Aves', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Arachnida', 'Insecta', 'Mollusca', 'Crustacea']);
+const DETECTIVE_ANIMALS = ['lion', 'octopus', 'penguin', 'giraffe', 'shark', 'elephant', 'kangaroo', 'owl', 'turtle', 'dolphin'];
 
 export default {
   async fetch(request, env) {
@@ -17,6 +18,7 @@ export class GameRoom {
     this.state = state;
     this.env = env;
     this.roomCode = 'SUNNY';
+    this.game = 'animal';
     this.players = new Map();
     this.hostId = null;
     this.round = null;
@@ -45,6 +47,10 @@ export class GameRoom {
       if (player.id !== this.hostId) return this.error(socket, 'Only the host can start a round.');
       return this.startRound();
     }
+    if (message.action === 'question' && this.game === 'detective') return this.question(socket, player, message.text);
+    if (message.action === 'answer-question' && this.game === 'detective') return this.answerQuestion(socket, player, message.answer);
+    if (message.action === 'guess' && this.game === 'detective') return this.guess(socket, player, message.answer);
+    if (message.action === 'submit' && this.game === 'quickchain') return this.chain(socket, player, message.answer);
     if (message.action === 'submit') return this.submit(socket, player, message.answer);
   }
 
@@ -52,6 +58,9 @@ export class GameRoom {
     if ([...this.players.values()].some((item) => item.socket === socket)) return;
     const id = crypto.randomUUID();
     const wantsHost = message.role === 'host';
+    const requestedGame = ['animal', 'quickchain', 'detective'].includes(message.game) ? message.game : 'animal';
+    if (this.players.size && this.game !== requestedGame) return this.error(socket, 'That room is playing a different game.');
+    this.game = requestedGame;
     if (wantsHost && message.password !== (this.env.HOST_PASSWORD || 'gamez-host-2026')) return this.error(socket, 'That host password is incorrect.');
     if (wantsHost && this.hostId) return this.error(socket, 'This room already has a host.');
     const player = { id, name: String(message.name || 'Player').trim().slice(0, 24), score: 0, socket };
@@ -99,10 +108,71 @@ export class GameRoom {
 
   startRound() {
     if (this.round?.active) return;
+    if (this.game === 'quickchain') return this.startChain();
+    if (this.game === 'detective') return this.startDetective();
     const letter = LETTERS[Math.floor(Math.random() * LETTERS.length)];
-    this.round = { letter, endsAt: Date.now() + 10000, active: true, answered: new Set(), answers: new Set() };
+    this.round = { type: 'animal', letter, endsAt: Date.now() + 10000, active: true, answered: new Set(), answers: new Set() };
     this.round.timeout = setTimeout(() => this.stopRound(`Time! The letter was ${letter}.`), 10000);
     this.history.push({ kind: 'system', message: `New round: name an animal beginning with ${letter}.` });
+    this.broadcast();
+  }
+
+  startChain() {
+    this.round = { type: 'quickchain', active: true, currentWord: '', currentPlayerId: null, usedWords: new Set() };
+    this.history.push({ kind: 'system', message: 'Quick Chain started. The host picks the first word.' });
+    this.broadcast();
+  }
+
+  startDetective() {
+    const players = [...this.players.values()];
+    this.round = { type: 'detective', active: true, phase: 'asking', turn: 1, attempts: [], animal: DETECTIVE_ANIMALS[Math.floor(Math.random() * DETECTIVE_ANIMALS.length)], teamA: players.filter((_, index) => index % 2 === 0).map((player) => player.id), teamB: players.filter((_, index) => index % 2 === 1).map((player) => player.id), questionCount: 0, currentQuestion: '' };
+    this.history.push({ kind: 'system', message: 'Animal Detective started. Team B asks first.' });
+    this.broadcast();
+  }
+
+  question(socket, player, text) {
+    if (!this.round?.active || this.round.phase !== 'asking' || !this.round.teamB.includes(player.id)) return this.error(socket, 'Only Team B can ask a question right now.');
+    this.round.questionCount += 1;
+    this.round.currentQuestion = String(text || '').trim().slice(0, 120);
+    this.round.phase = 'answering';
+    this.broadcast();
+  }
+
+  answerQuestion(socket, player, answer) {
+    if (!this.round?.active || this.round.phase !== 'answering' || !this.round.teamA.includes(player.id)) return this.error(socket, 'Team A answers the current question.');
+    this.history.push({ kind: 'system', message: `Team A answered: ${answer === 'yes' ? 'YES' : 'NO'}.` });
+    this.round.phase = 'asking';
+    this.broadcast();
+  }
+
+  guess(socket, player, answer) {
+    if (!this.round?.active || this.round.phase !== 'asking' || !this.round.teamB.includes(player.id)) return this.error(socket, 'Team B guesses after asking questions.');
+    if (String(answer || '').trim().toLowerCase() !== this.round.animal) return this.error(socket, 'That guess is incorrect. Ask another question.');
+    this.round.attempts.push(this.round.questionCount);
+    if (this.round.turn === 1) {
+      this.history.push({ kind: 'success', message: `Team B guessed ${this.round.animal} in ${this.round.questionCount} question${this.round.questionCount === 1 ? '' : 's'}. Teams swap places.` });
+      [this.round.teamA, this.round.teamB] = [this.round.teamB, this.round.teamA];
+      this.round.turn = 2; this.round.questionCount = 0; this.round.currentQuestion = ''; this.round.phase = 'asking';
+      this.round.animal = DETECTIVE_ANIMALS[Math.floor(Math.random() * DETECTIVE_ANIMALS.length)];
+    } else {
+      const [first, second] = this.round.attempts;
+      const winner = first === second ? 'It is a tie' : first < second ? 'Team B wins' : 'Team A wins';
+      this.history.push({ kind: 'success', message: `Team A guessed ${this.round.animal} in ${this.round.questionCount} questions. ${winner} with ${Math.min(first, second)} questions.` });
+      this.round.active = false;
+    }
+    this.broadcast();
+  }
+
+  chain(socket, player, rawWord) {
+    if (!this.round?.active) return this.error(socket, 'There is no active round.');
+    const players = [...this.players.values()];
+    const expectedId = this.round.currentPlayerId ? players[(players.findIndex((item) => item.id === this.round.currentPlayerId) + 1) % players.length]?.id : this.hostId;
+    if (player.id !== expectedId) return this.error(socket, 'Wait for your turn.');
+    const word = String(rawWord || '').trim().toLowerCase().replace(/[^a-z]/g, '');
+    if (!word || this.round.usedWords.has(word)) return this.error(socket, 'That word was already used. Try another word.');
+    if (this.round.currentWord && word[0] !== this.round.currentWord.at(-1)) return this.error(socket, `Your word must begin with ${this.round.currentWord.at(-1).toUpperCase()}.`);
+    this.round.usedWords.add(word); this.round.currentWord = word; this.round.currentPlayerId = player.id;
+    this.history.push({ kind: 'success', message: `${player.name} played ${word}.` });
     this.broadcast();
   }
 
@@ -122,7 +192,9 @@ export class GameRoom {
   }
 
   broadcast() {
-    const state = JSON.stringify({ type: 'state', room: this.roomCode, hostId: this.hostId, players: [...this.players.values()].map(({ id, name, score }) => ({ id, name, score })), round: this.round && { letter: this.round.letter, endsAt: this.round.endsAt, active: this.round.active, answered: [...this.round.answered] }, history: this.history.slice(-8) });
-    for (const player of this.players.values()) if (player.socket.readyState === 1) player.socket.send(state);
+    for (const player of this.players.values()) {
+      const round = this.round && { type: this.round.type, letter: this.round.letter, endsAt: this.round.endsAt, active: this.round.active, answered: [...(this.round.answered || [])], currentWord: this.round.currentWord, currentQuestion: this.round.currentQuestion, questionCount: this.round.questionCount, phase: this.round.phase, teamA: this.round.teamA, teamB: this.round.teamB, animal: this.round.teamA?.includes(player.id) ? this.round.animal : undefined };
+      if (player.socket.readyState === 1) player.socket.send(JSON.stringify({ type: 'state', room: this.roomCode, game: this.game, hostId: this.hostId, players: [...this.players.values()].map(({ id, name, score }) => ({ id, name, score })), round, history: this.history.slice(-8) }));
+    }
   }
 }

@@ -27,7 +27,7 @@ $('guessForm').addEventListener('submit', (event) => { event.preventDefault(); c
 $('questionForm').addEventListener('submit', (event) => { event.preventDefault(); const input = $('questionInput'); if (input.value.trim()) { send({ action: 'question', text: input.value }); input.value = ''; } });
 document.querySelectorAll('#detectiveButtons button').forEach((button) => button.addEventListener('click', () => send({ action: 'answer-question', answer: button.dataset.answer })));
 $('copyButton').addEventListener('click', async () => { await navigator.clipboard?.writeText($('roomName').textContent); $('copyButton').textContent = 'COPIED!'; setTimeout(() => $('copyButton').textContent = 'COPY ROOM CODE', 1300); });
-$('censorToggle').addEventListener('click', () => { censorAnimal = !censorAnimal; animalCensored = censorAnimal; $('censorToggle').textContent = censorAnimal ? 'ANIMAL: HIDDEN' : 'ANIMAL: REVEALED'; render(state); });
+$('censorToggle').addEventListener('click', () => { censorAnimal = !censorAnimal; animalCensored = censorAnimal; render(state); });
 
 function connect() {
   const protocol = location.protocol === 'https:' ? 'wss' : 'ws';

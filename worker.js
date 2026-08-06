@@ -139,7 +139,7 @@ export class GameRoom {
     try {
       const response = await fetch('https://api.inaturalist.org/v1/taxa?iconic_taxon_name=Animalia&rank=species&per_page=100&order_by=observations_count&order=desc');
       const data = await response.json();
-      const names = (data.results || []).map((taxon) => taxon.preferred_common_name || taxon.name).filter(Boolean);
+      const names = (data.results || []).filter((taxon) => ANIMAL_TAXA.has(taxon.iconic_taxon_name)).map((taxon) => taxon.preferred_common_name || taxon.name).filter(Boolean);
       if (names.length) return names[Math.floor(Math.random() * names.length)].toLowerCase();
     } catch {}
     return 'lion';

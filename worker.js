@@ -1,6 +1,6 @@
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const ANIMAL_TAXA = new Set(['Animalia', 'Mammalia', 'Aves', 'Reptilia', 'Amphibia', 'Actinopterygii', 'Arachnida', 'Insecta', 'Mollusca', 'Crustacea']);
-const SIMPLE_ANIMALS = ['cat', 'dog', 'lion', 'tiger', 'bear', 'horse', 'goat', 'sheep', 'cow', 'pig', 'rabbit', 'mouse', 'monkey', 'zebra', 'giraffe', 'elephant', 'hippopotamus', 'kangaroo', 'panda', 'penguin', 'dolphin', 'whale', 'shark', 'turtle', 'snake', 'frog', 'eagle', 'owl', 'parrot', 'chicken'];
+const SIMPLE_ANIMALS = ['cat', 'dog', 'lion', 'tiger', 'bear', 'polar bear', 'horse', 'goat', 'sheep', 'cow', 'pig', 'rabbit', 'mouse', 'monkey', 'zebra', 'giraffe', 'elephant', 'hippopotamus', 'kangaroo', 'panda', 'red panda', 'penguin', 'dolphin', 'whale', 'blue whale', 'shark', 'great white shark', 'turtle', 'sea turtle', 'snake', 'frog', 'eagle', 'golden eagle', 'owl', 'parrot', 'chicken'];
 
 export default {
   async fetch(request, env) {

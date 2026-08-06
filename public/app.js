@@ -19,6 +19,7 @@ $('roleInput').addEventListener('change', () => $('passwordField').classList.tog
 $('startButton').addEventListener('click', () => send({ action: 'start' }));
 $('answerForm').addEventListener('submit', (event) => { event.preventDefault(); const input = $('answerInput'); if (input.value.trim()) { send({ action: 'submit', answer: input.value }); input.value = ''; } });
 $('guessForm').addEventListener('submit', (event) => { event.preventDefault(); const input = $('guessInput'); if (input.value.trim()) { send({ action: 'guess', answer: input.value }); input.value = ''; } });
+$('questionForm').addEventListener('submit', (event) => { event.preventDefault(); const input = $('questionInput'); if (input.value.trim()) { send({ action: 'question', text: input.value }); input.value = ''; } });
 document.querySelectorAll('#detectiveButtons button').forEach((button) => button.addEventListener('click', () => send({ action: 'answer-question', answer: button.dataset.answer })));
 $('copyButton').addEventListener('click', async () => { await navigator.clipboard?.writeText($('roomName').textContent); $('copyButton').textContent = 'COPIED!'; setTimeout(() => $('copyButton').textContent = 'COPY ROOM CODE', 1300); });
 
@@ -41,12 +42,12 @@ function render(next) {
   const isHost = next.hostId === myId;
   $('players').innerHTML = next.players.map((player) => `<div class="player"><span>${escapeHtml(player.name)} ${player.id === myId ? '<small class="you">YOU</small>' : ''} ${player.id === next.hostId ? '<small class="host">HOST</small>' : ''}</span><span class="score">${player.score} pts</span></div>`).join('');
   const round = next.round; const gameName = next.game === 'quickchain' ? 'Quick Chain' : next.game === 'detective' ? 'Animal Detective' : 'Animal Sprint'; $('gameTitle').firstChild.textContent = `${gameName} `;
-  const detective = next.game === 'detective'; const chain = next.game === 'quickchain'; $('roundLabel').textContent = detective ? 'TEAM A SEES' : chain ? 'CURRENT CHAIN' : 'YOUR LETTER IS'; $('letter').textContent = detective ? (round?.animal || '?') : chain ? (round?.currentWord || 'START') : (round?.letter || '?');
+  const detective = next.game === 'detective'; const chain = next.game === 'quickchain'; $('roundLabel').textContent = detective ? (round?.animal ? 'TEAM A SEES' : 'CURRENT QUESTION') : chain ? 'CURRENT CHAIN' : 'YOUR LETTER IS'; $('letter').textContent = detective ? (round?.animal || round?.currentQuestion || '?') : chain ? (round?.currentWord || 'START') : (round?.letter || '?');
   $('rulesText').textContent = detective ? 'Team B asks yes-or-no questions. Team A answers. Lowest question count wins.' : chain ? 'Play a word beginning with the last letter of the previous word.' : 'Say an animal that begins with the displayed letter before time runs out.';
   $('startButton').classList.toggle('hidden', !isHost || Boolean(round?.active));
   $('roundStatus').textContent = round?.active ? (detective ? `${round.phase === 'answering' ? 'TEAM A ANSWERS' : 'TEAM B ASKS'} · ${round.questionCount || 0} QUESTIONS` : chain ? 'PLAY A WORD' : 'NAME AN ANIMAL') : (round ? 'ROUND OVER' : (isHost ? 'READY TO START' : 'WAITING FOR HOST'));
   const canAnswer = Boolean(round?.active && !detective && !(round.answered || []).includes(myId)); $('answerInput').disabled = !canAnswer; $('answerForm').querySelector('button').disabled = !canAnswer; $('answerInput').placeholder = chain ? 'Next word...' : 'Type an animal...';
-  $('guessForm').classList.toggle('hidden', !detective || !round?.active || !round.teamB?.includes(myId) || round.phase !== 'asking'); $('detectiveButtons').classList.toggle('hidden', !detective || !round?.active || !round.teamA?.includes(myId) || round.phase !== 'answering'); $('answerForm').classList.toggle('hidden', detective);
+  $('answerForm').classList.toggle('hidden', detective); $('questionForm').classList.toggle('hidden', !detective || !round?.active || !round.teamB?.includes(myId) || round.phase !== 'asking'); $('guessForm').classList.toggle('hidden', !detective || !round?.active || !round.teamB?.includes(myId) || round.phase !== 'asking'); $('detectiveButtons').classList.toggle('hidden', !detective || !round?.active || !round.teamA?.includes(myId) || round.phase !== 'answering');
   if (round?.active) startTimer(round.endsAt); else { $('timer').textContent = '—'; clearInterval(timerInterval); }
   $('feed').innerHTML = next.history.map((item) => `<p class="${item.kind}">${escapeHtml(item.message)}</p>`).join('');
 }

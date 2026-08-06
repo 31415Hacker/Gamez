@@ -44,7 +44,7 @@ function render(next) {
   $('players').innerHTML = next.players.map((player) => { const team = next.game === 'detective' && round ? (round.teamA?.includes(player.id) ? 'A' : round.teamB?.includes(player.id) ? 'B' : '') : ''; return `<div class="player"><span>${escapeHtml(player.name)} ${player.id === myId ? '<small class="you">YOU</small>' : ''} ${player.id === next.hostId ? '<small class="host">HOST</small>' : ''} ${team ? `<small class="team team-${team.toLowerCase()}">TEAM ${team}</small>` : ''}</span><span class="score">${player.score} pts</span></div>`; }).join('');
   const detective = next.game === 'detective'; const chain = next.game === 'quickchain'; $('roundLabel').textContent = detective ? (round?.animal ? 'TEAM A SEES' : 'CURRENT QUESTION') : chain ? 'CURRENT CHAIN' : 'YOUR LETTER IS'; $('letter').textContent = detective ? (round?.animal || round?.currentQuestion || '?') : chain ? (round?.currentWord || 'START') : (round?.letter || '?');
   $('letter').classList.toggle('question-display', detective && !round?.animal);
-  $('questionText').textContent = round?.currentQuestion || '';
+  $('questionText').textContent = round?.currentQuestion ? `QUESTION: ${round.currentQuestion}` : '';
   $('questionText').classList.toggle('hidden', !detective || !round?.currentQuestion);
   $('rulesText').textContent = detective ? 'Team B asks yes-or-no questions. Team A answers. Lowest question count wins.' : chain ? 'Play a word beginning with the last letter of the previous word.' : 'Say an animal that begins with the displayed letter before time runs out.';
   $('startButton').classList.toggle('hidden', !isHost || Boolean(round?.active));

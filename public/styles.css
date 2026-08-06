@@ -6,5 +6,5 @@
 .letter-box strong.question-display{font-size:clamp(28px,5vw,52px);line-height:1.12;letter-spacing:-1px;text-align:center;padding:0 28px;max-width:100%}
 .detective-buttons{display:flex;gap:24px;align-items:center}
 .detective-buttons .start-button{display:inline-block;min-width:70px;margin-right:12px;padding:14px 20px;border:1px solid var(--red)}
-.letter-box #questionText{margin:18px 28px 0;max-width:520px;text-align:center;font-size:16px;line-height:1.4;color:var(--ink)}
+.letter-box #questionText{display:block;margin:18px 28px 0;max-width:560px;text-align:center;font-size:clamp(15px,2vw,21px);font-weight:600;line-height:1.35;letter-spacing:-.3px;color:var(--ink)}
 .player .team{font:9px 'DM Mono';letter-spacing:1px;margin-left:5px}.player .team-a{color:var(--red)}.player .team-b{color:#78951e}

@@ -115,7 +115,9 @@ wss.on('connection', (socket) => {
       const wantsHost = message.role === 'host';
       if (wantsHost && message.password !== (process.env.HOST_PASSWORD || 'gamez-host-2026')) { sendError(socket, 'That host password is incorrect.'); return; }
       if (wantsHost && room.hostId) { sendError(socket, 'This room already has a host.'); return; }
-      player = { id, name: clean(message.name, 'Player'), room: code, score: 0, connected: true, socket };
+      const name = clean(message.name, 'Player');
+      if ([...room.players.values()].some((item) => item.name.toLowerCase() === name.toLowerCase())) { sendError(socket, 'That name is already being used in this room. Choose another name.'); return; }
+      player = { id, name, room: code, score: 0, connected: true, socket };
       if (wantsHost) room.hostId = id;
       room.players.set(id, player); rooms.set(code, room);
       socket.send(JSON.stringify({ type: 'joined', id, room: code }));

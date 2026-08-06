@@ -67,7 +67,9 @@ export class GameRoom {
     this.game = requestedGame;
     if (wantsHost && message.password !== (this.env.HOST_PASSWORD || 'gamez-host-2026')) return this.error(socket, 'That host password is incorrect.');
     if (wantsHost && this.hostId) return this.error(socket, 'This room already has a host.');
-    const player = { id, name: String(message.name || 'Player').trim().slice(0, 24), score: 0, socket };
+    const name = String(message.name || 'Player').trim().slice(0, 24);
+    if ([...this.players.values()].some((item) => item.name.toLowerCase() === name.toLowerCase())) return this.error(socket, 'That name is already being used in this room. Choose another name.');
+    const player = { id, name, score: 0, socket };
     this.players.set(id, player);
     if (wantsHost) this.hostId = id;
     socket.send(JSON.stringify({ type: 'joined', id }));

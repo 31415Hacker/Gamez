@@ -138,6 +138,7 @@ export class GameRoom {
     if (!this.round?.active || this.round.phase !== 'asking' || !this.round.teamB.includes(player.id)) return this.error(socket, 'Only Team B can ask a question right now.');
     this.round.questionCount += 1;
     this.round.currentQuestion = String(text || '').trim().slice(0, 120);
+    this.history.push({ kind: 'system', message: `${player.name} asks: “${this.round.currentQuestion}”` });
     this.round.phase = 'answering';
     this.broadcast();
   }

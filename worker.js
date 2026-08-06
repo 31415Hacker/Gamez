@@ -47,6 +47,10 @@ export class GameRoom {
       if (player.id !== this.hostId) return this.error(socket, 'Only the host can start a round.');
       return this.startRound();
     }
+    if (message.action === 'delete-room') {
+      if (player.id !== this.hostId) return this.error(socket, 'Only the host can delete the room.');
+      return this.deleteRoom();
+    }
     if (message.action === 'question' && this.game === 'detective') return this.question(socket, player, message.text);
     if (message.action === 'answer-question' && this.game === 'detective') return this.answerQuestion(socket, player, message.answer);
     if (message.action === 'guess' && this.game === 'detective') return this.guess(socket, player, message.answer);
@@ -202,6 +206,16 @@ export class GameRoom {
 
   stopRound(message) { if (this.round) { this.round.active = false; this.history.push({ kind: 'system', message }); this.broadcast(); } }
   error(socket, message) { socket.send(JSON.stringify({ type: 'error', message })); }
+
+  deleteRoom() {
+    for (const player of this.players.values()) {
+      if (player.socket.readyState === 1) {
+        player.socket.send(JSON.stringify({ type: 'deleted', message: 'The host deleted this room.' }));
+        player.socket.close(1000, 'Room deleted');
+      }
+    }
+    this.players.clear(); this.hostId = null; this.round = null; this.history = []; this.game = 'animal'; this.detectiveScores = { A: 0, B: 0 };
+  }
 
   leave(socket) {
     const entry = [...this.players.entries()].find(([, player]) => player.socket === socket);

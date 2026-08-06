@@ -17,6 +17,7 @@ $('backButton').addEventListener('click', () => { playPanel.classList.add('hidde
 $('joinForm').addEventListener('submit', (event) => { event.preventDefault(); connect(); });
 $('roleInput').addEventListener('change', () => $('passwordField').classList.toggle('hidden', $('roleInput').value !== 'host'));
 $('startButton').addEventListener('click', () => send({ action: 'start' }));
+$('deleteRoomButton').addEventListener('click', () => { if (confirm('Delete this room for everyone?')) send({ action: 'delete-room' }); });
 $('answerForm').addEventListener('submit', (event) => { event.preventDefault(); const input = $('answerInput'); if (input.value.trim()) { send({ action: 'submit', answer: input.value }); input.value = ''; } });
 $('guessForm').addEventListener('submit', (event) => { event.preventDefault(); const input = $('guessInput'); if (input.value.trim()) { send({ action: 'guess', answer: input.value }); input.value = ''; } });
 $('questionForm').addEventListener('submit', (event) => { event.preventDefault(); const input = $('questionInput'); if (input.value.trim()) { send({ action: 'question', text: input.value }); input.value = ''; } });
@@ -32,7 +33,7 @@ function connect() {
     : localPagesServer;
   socket = new WebSocket(websocketUrl);
   socket.addEventListener('open', () => send({ action: 'join', name: $('nameInput').value, room: $('roomInput').value, game: selectedGame, role: $('roleInput').value, password: $('passwordInput').value }));
-  socket.addEventListener('message', ({ data }) => { const message = JSON.parse(data); if (message.type === 'joined') myId = message.id; if (message.type === 'error') return alert(message.message); if (message.type === 'state') render(message); });
+  socket.addEventListener('message', ({ data }) => { const message = JSON.parse(data); if (message.type === 'joined') myId = message.id; if (message.type === 'error') return alert(message.message); if (message.type === 'deleted') { alert(message.message); roomPanel.classList.add('hidden'); lobby.classList.remove('hidden'); return; } if (message.type === 'state') render(message); });
   socket.addEventListener('close', () => { if (roomPanel.classList.contains('hidden') === false) $('roundStatus').textContent = 'CONNECTION LOST'; });
 }
 function send(message) { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message)); }
@@ -40,6 +41,7 @@ function render(next) {
   state = next; playPanel.classList.add('hidden'); lobby.classList.add('hidden'); roomPanel.classList.remove('hidden');
   $('roomName').textContent = next.room; $('playerCount').textContent = `${next.players.length} / 8`;
   const isHost = next.hostId === myId;
+  $('deleteRoomButton').classList.toggle('hidden', !isHost);
   const round = next.round; const gameName = next.game === 'quickchain' ? 'Quick Chain' : next.game === 'detective' ? 'Animal Detective' : 'Animal Sprint'; $('gameTitle').firstChild.textContent = `${gameName} `;
   $('players').innerHTML = next.players.map((player) => { const team = next.game === 'detective' && round ? (round.teamA?.includes(player.id) ? 'A' : round.teamB?.includes(player.id) ? 'B' : '') : ''; return `<div class="player"><span>${escapeHtml(player.name)} ${player.id === myId ? '<small class="you">YOU</small>' : ''} ${player.id === next.hostId ? '<small class="host">HOST</small>' : ''} ${team ? `<small class="team team-${team.toLowerCase()}">TEAM ${team}</small>` : ''}</span><span class="score">${player.score} pts</span></div>`; }).join('');
   const detective = next.game === 'detective'; const chain = next.game === 'quickchain'; $('roundLabel').textContent = detective ? (round?.animal ? `TEAM ${round.knowerTeam} SEES` : 'CURRENT QUESTION') : chain ? 'CURRENT CHAIN' : 'YOUR LETTER IS'; $('letter').textContent = detective ? (round?.animal || round?.currentQuestion || '?') : chain ? (round?.currentWord || 'START') : (round?.letter || '?');
@@ -50,7 +52,7 @@ function render(next) {
   $('teamScore').textContent = detective ? `TEAM A ${next.teamScores?.A || 0}  ·  TEAM B ${next.teamScores?.B || 0}` : '';
   $('startButton').classList.toggle('hidden', !isHost || Boolean(round?.active));
   const knowsAnimal = detective && ((round?.knowerTeam === 'A' && round?.teamA?.includes(myId)) || (round?.knowerTeam === 'B' && round?.teamB?.includes(myId))); const canGuess = detective && !knowsAnimal;
-  $('roundStatus').textContent = round?.active ? (detective ? `${round.phase === 'answering' ? `TEAM ${round.knowerTeam} ANSWERS` : `TEAM ${round.knowerTeam === 'A' ? 'B' : 'A'} ASKS`} · ${round.questionCount || 0} QUESTIONS` : chain ? 'PLAY A WORD' : 'NAME AN ANIMAL') : (round ? 'ROUND OVER' : (isHost ? 'READY TO START' : 'WAITING FOR HOST'));
+  $('roundStatus').textContent = round?.active ? (detective ? `${round.phase === 'answering' ? `TEAM ${round.knowerTeam} ANSWERS` : `TEAM ${round.knowerTeam === 'A' ? 'B' : 'A'} ASKS`} · ${round.questionCount || 0} QUESTIONS` : chain ? 'PLAY A WORD' : 'NAME AN ANIMAL') : (round ? 'ROUND OVER' : (isHost ? 'READY TO START' : 'HOST HAS NOT JOINED YET. PLEASE WAIT FOR THE HOST TO START THE GAME.'));
   const canAnswer = Boolean(round?.active && !detective && !(round.answered || []).includes(myId)); $('answerInput').disabled = !canAnswer; $('answerForm').querySelector('button').disabled = !canAnswer; $('answerInput').placeholder = chain ? 'Next word...' : 'Type an animal...';
   $('answerForm').classList.toggle('hidden', detective); $('questionForm').classList.toggle('hidden', !canGuess || !round?.active || round.phase !== 'asking'); $('guessForm').classList.toggle('hidden', !canGuess || !round?.active || round.phase !== 'asking'); $('detectiveButtons').classList.toggle('hidden', !knowsAnimal || !round?.active || round.phase !== 'answering');
   if (round?.active) startTimer(round.endsAt); else { $('timer').textContent = '—'; clearInterval(timerInterval); }

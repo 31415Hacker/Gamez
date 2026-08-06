@@ -5,3 +5,5 @@
 .join-form select{display:block;width:100%;border:0;border-bottom:1px solid #aeb2a6;background:transparent;padding:13px 0;font-size:17px;outline:0;color:var(--ink)}
 .letter-box strong.question-display{font-size:clamp(28px,5vw,52px);line-height:1.12;letter-spacing:-1px;text-align:center;padding:0 28px;max-width:100%}
 .detective-buttons{display:flex;gap:24px;align-items:center}
+.detective-buttons .start-button{display:inline-block;min-width:70px;margin-right:12px;padding:14px 20px;border:1px solid var(--red)}
+.letter-box #questionText{margin:18px 28px 0;max-width:520px;text-align:center;font-size:16px;line-height:1.4;color:var(--ink)}

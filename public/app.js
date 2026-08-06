@@ -44,6 +44,8 @@ function render(next) {
   const round = next.round; const gameName = next.game === 'quickchain' ? 'Quick Chain' : next.game === 'detective' ? 'Animal Detective' : 'Animal Sprint'; $('gameTitle').firstChild.textContent = `${gameName} `;
   const detective = next.game === 'detective'; const chain = next.game === 'quickchain'; $('roundLabel').textContent = detective ? (round?.animal ? 'TEAM A SEES' : 'CURRENT QUESTION') : chain ? 'CURRENT CHAIN' : 'YOUR LETTER IS'; $('letter').textContent = detective ? (round?.animal || round?.currentQuestion || '?') : chain ? (round?.currentWord || 'START') : (round?.letter || '?');
   $('letter').classList.toggle('question-display', detective && !round?.animal);
+  $('questionText').textContent = round?.currentQuestion || '';
+  $('questionText').classList.toggle('hidden', !detective || !round?.currentQuestion);
   $('rulesText').textContent = detective ? 'Team B asks yes-or-no questions. Team A answers. Lowest question count wins.' : chain ? 'Play a word beginning with the last letter of the previous word.' : 'Say an animal that begins with the displayed letter before time runs out.';
   $('startButton').classList.toggle('hidden', !isHost || Boolean(round?.active));
   $('roundStatus').textContent = round?.active ? (detective ? `${round.phase === 'answering' ? 'TEAM A ANSWERS' : 'TEAM B ASKS'} · ${round.questionCount || 0} QUESTIONS` : chain ? 'PLAY A WORD' : 'NAME AN ANIMAL') : (round ? 'ROUND OVER' : (isHost ? 'READY TO START' : 'WAITING FOR HOST'));

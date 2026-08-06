@@ -3,3 +3,5 @@
 @media(max-width:760px){.shell{padding:20px}.hero{padding:60px 0}.hero h1{letter-spacing:-3px}.game-grid,.join-layout,.game-layout{grid-template-columns:1fr}.game-card{min-height:220px}.join-layout{gap:30px;padding:35px 0}.play-panel,.room-panel{padding-top:50px}.room-header{align-items:flex-start;gap:20px}.room-header h2{font-size:28px}.game-layout{gap:25px}.letter-box{height:230px}.letter-box strong{font-size:110px}footer{margin-top:70px;font-size:8px}}
 .player .host{color:#78951e;font:10px 'DM Mono';letter-spacing:1px;margin-left:4px}
 .join-form select{display:block;width:100%;border:0;border-bottom:1px solid #aeb2a6;background:transparent;padding:13px 0;font-size:17px;outline:0;color:var(--ink)}
+.letter-box strong.question-display{font-size:clamp(28px,5vw,52px);line-height:1.12;letter-spacing:-1px;text-align:center;padding:0 28px;max-width:100%}
+.detective-buttons{display:flex;gap:24px;align-items:center}

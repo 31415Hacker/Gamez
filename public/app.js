@@ -21,6 +21,7 @@ $('backButton').addEventListener('click', () => { playPanel.classList.add('hidde
 $('joinForm').addEventListener('submit', (event) => { event.preventDefault(); connect(); });
 $('roleInput').addEventListener('change', () => $('passwordField').classList.toggle('hidden', $('roleInput').value !== 'host'));
 $('startButton').addEventListener('click', () => send({ action: 'start' }));
+$('giveUpButton').addEventListener('click', () => { if (confirm('Give up and end this round?')) send({ action: 'give-up' }); });
 $('deleteRoomButton').addEventListener('click', () => { if (confirm('Delete this room for everyone?')) send({ action: 'delete-room' }); });
 $('answerForm').addEventListener('submit', (event) => { event.preventDefault(); const input = $('answerInput'); if (input.value.trim()) { send({ action: 'submit', answer: input.value }); input.value = ''; } });
 $('guessForm').addEventListener('submit', (event) => { event.preventDefault(); const input = $('guessInput'); if (input.value.trim()) { send({ action: 'guess', answer: input.value }); input.value = ''; } });
@@ -65,6 +66,7 @@ function render(next) {
   $('roundStatus').textContent = round?.active ? (detective ? `${round.phase === 'answering' ? `TEAM ${round.knowerTeam} ANSWERS` : `TEAM ${round.knowerTeam === 'A' ? 'B' : 'A'} ASKS`} · ${round.questionCount || 0} QUESTIONS` : chain ? 'PLAY A WORD' : 'NAME AN ANIMAL') : (round ? 'ROUND OVER' : (isHost ? 'READY TO START' : 'HOST HAS NOT JOINED YET. PLEASE WAIT FOR THE HOST TO START THE GAME.'));
   const canAnswer = Boolean(round?.active && !detective && !(round.answered || []).includes(myId)); $('answerInput').disabled = !canAnswer; $('answerForm').querySelector('button').disabled = !canAnswer; $('answerInput').placeholder = chain ? 'Next word...' : 'Type an animal...';
   $('answerForm').classList.toggle('hidden', detective); $('questionForm').classList.toggle('hidden', !canGuess || !round?.active || round.phase !== 'asking'); $('guessForm').classList.toggle('hidden', !canGuess || !round?.active || round.phase !== 'asking'); $('detectiveButtons').classList.toggle('hidden', !knowsAnimal || !round?.active || round.phase !== 'answering');
+  $('giveUpButton').classList.toggle('hidden', !canGuess || !round?.active || round.phase !== 'asking');
   if (round?.active) startTimer(round.endsAt); else { $('timer').textContent = '—'; clearInterval(timerInterval); }
   $('feed').innerHTML = next.history.map((item) => `<p class="${item.kind}">${escapeHtml(item.message)}</p>`).join('');
 }

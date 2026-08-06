@@ -54,6 +54,7 @@ export class GameRoom {
     if (message.action === 'question' && this.game === 'detective') return this.question(socket, player, message.text);
     if (message.action === 'answer-question' && this.game === 'detective') return this.answerQuestion(socket, player, message.answer);
     if (message.action === 'guess' && this.game === 'detective') return this.guess(socket, player, message.answer);
+    if (message.action === 'give-up' && this.game === 'detective') return this.giveUp(socket, player);
     if (message.action === 'submit' && this.game === 'quickchain') return this.chain(socket, player, message.answer);
     if (message.action === 'submit') return this.submit(socket, player, message.answer);
   }
@@ -190,6 +191,16 @@ export class GameRoom {
       this.history.push({ kind: 'success', message: `Team ${secondTeam} guessed ${this.round.animal} in ${this.round.questionCount} questions. ${winner}.` });
       this.round.active = false;
     }
+    this.broadcast();
+  }
+
+  giveUp(socket, player) {
+    const guessers = this.round?.knowerTeam === 'A' ? this.round.teamB : this.round.teamA;
+    if (!this.round?.active || this.round.phase !== 'asking' || !guessers.includes(player.id)) return this.error(socket, 'Only the guessing team can give up.');
+    const winner = this.round.knowerTeam;
+    this.detectiveScores[winner] += 1;
+    this.round.active = false;
+    this.history.push({ kind: 'success', message: `The guessing team gave up. Team ${winner} wins this round. The animal was ${this.round.animal}.` });
     this.broadcast();
   }
 

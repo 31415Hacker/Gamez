@@ -22,6 +22,10 @@ so it can connect to a local `npm start` server on your computer. This only
 works for the person who is running that local server: `localhost` is never a
 public multiplayer host.
 
+The same frontend can be deployed to Vercel by importing this repository. The
+included `vercel.json` routes the site from `public/`; use Vercel for the UI and
+the Cloudflare Worker for WebSockets.
+
 For public multiplayer, deploy `worker.js` with Wrangler, set the host password
 as a Cloudflare secret, and set `window.GAMEZ_WS_URL` in `public/index.html` to
 the Worker URL, for example `wss://gamez-multiplayer.your-subdomain.workers.dev`.
